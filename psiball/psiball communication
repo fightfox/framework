@@ -1,0 +1,44 @@
+psiball communication
+
+JS->CC
+
+action 1: move unit
+format: char 1, float x, float y
+action 2: fire bullet
+format: char 2
+action 3: recall bullet
+format: char 3
+
+CC->JS
+
+action 11: information completion
+format: uint8_t 11, uint32_t id (odd&even), uint8_t prev_priv, 
+uint8_t new_priv, uint8_t type, then:
+
+if id % 2 = 0, for each data[id]->type,
+0: Body
+format: (1) uint32_t owner
+1: Bullet
+format: (1) uint32_t owner
+2: Recall
+format: (1) uint32_t owner
+3: Wall
+format: -
+4: Food
+format: (1) uint8_t food_type
+
+if id % 2 = 1, for data[id]->type,
+0: Fighter
+format: (1) uint8_t state, string nickname
+        (2) uint32_t my_body, my_bullet, my_recall
+
+update 101: fire bullet
+format: uint8_t 101, uint32_t id, my_bullet 
+update 102: recall bullet
+format: uint8_t 102, uint32_t id, my_recall 
+update 103: change state
+format: uint8_t 103, uint32_t id
+update 104: rebody
+format: uint8_t 104, uint32_t id
+
+

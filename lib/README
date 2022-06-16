@@ -1,0 +1,119 @@
+README
+
+======================  CC->JS  ==========================
+
+figure{char 0/1 (figure_type), [0]double r, 
+  [1] double r, dx, dy}
+
+1. double tick_head
+2. special action: moveUnit
+format: uint8_t time_delta, uint32_t id, double x, y
+end: uint8_t 255
+3. action
+format: uint8_t time_delta, uint8_t action_id, ... 
+
+action 1: showUnit 
+format: uint32_t id, figure
+action 3: createUnit
+format: uint32_t id
+action 4: removePlayer
+format: uint32_t id
+action 5: identifyYourself
+format: uint32_t player_id
+action 6: removeUnit
+format: uint32_t id
+action 7: changeUnit (Figure)
+format: uint32_t id, figure
+action 8: changeUnit (R)
+format: unit32_t id, double r
+
+action 10: hideUnit
+formmat: uint32_t id
+action 11: information completion
+format: uint32_t id (odd&even), uint8_t prev_priv, 
+uint8_t new_priv, uint8_t type, ...
+action 12: lazy data (update)
+format: uint32_t id (odd&even), uint8_priv, uint8_t type, ...
+action custom: ...
+
+end: uint8_t 255
+
+===============  Unit, Player, Cooldown ===================
+
+enum Unit::Type: uint8_t {};
+enum Player::Type: uint8_t {};
+Unit(Type type, uint8_t own_priv) (remember .mass)
+Player(Type, uint32_t id, shared_ptr<Socket>&, uint8_t priv)
+Cooldown([uint32_t id,] Time time)
+
+Unit, Player:
+virtual void toMessage(uint8_t, Socket&)
+Player:
+virtual BB getBB()
+Cooldown:
+virtual void handle()
+
+enum Figure::Type : uint8_t {CIRCLE,SEGMENT};
+Figure::Circle(XY p, double r)
+Figure::Segment(XY p0, XY p1, double r)
+
+=======================  g->...  ==========================
+
+using CT = CollisionType;
+enum class CollisionType : uint8_t {
+  NONE, DETECTABLE, REPULSIVE, REPULSIVE_DETECTABLE }
+void setupCollision(const function<CollisionType(uint32_t, uint32_t)>&);
+enum class BotOperation : uint8_t {
+  START, PLAY, DEATH, ASSIGN}
+void setupBot(const function<void(uint32_t player_id, BotOperation)>&);
+
+XY getXY(uint32_t)
+double getR(uint32_t)
+Figure* getFigure(uint32_t)
+int32_t getUnitCount()
+int32_t getPlayerCount()
+uint32_t observe(uint32_t, uint8_t, uint32_t, uint8_t)
+void update([uint32_t, uint8_t,] [const function<void(Socket&)>&])
+bool isAlive(uint32_t)
+uint32_t addCooldown(Cooldown*)
+void modifyCooldown(uint32_t, Time);
+void removeCooldown(uint32_t);
+Unit* getUnit(uint32_t)
+Player* getPlayer(uint32_t);
+void disconnect(shared_ptr<Socket>&);
+uint32_t getNewPlayerId();
+
+
+=======================  Action  ==========================
+
+uint32_t createUnit(Unit*, Figure*)
+void moveUnit(uint32_t, Time)
+void movePlayer(uint32_t)
+uint32_t createPlayer(Player*)
+void showPlayer(uint32_t)
+bool removeUnit(uint32_t)
+void changeUnit(uint32_t, Figure*)
+void changeR(uint32_t, double)
+void changeXY(uint32_t, XY)
+void changeV(uint32_t, XY)
+bool removePlayer(uint32_t)
+void createBot(unique_ptr<Buffer::Reader>)
+void assignBot(uint32_t)
+void visiblize(uint32_t)
+void invisiblize(uint32_t)
+
+=======================  Event  ==========================
+
+INIT: -
+ON_COLLISION: uint32_t id1, id2
+UPDATE_WORLD: -
+START: shared_ptr<Socket> socket, 
+       unique_ptr<Buffer::Reader> reader, uint32_t id
+CLOSE: shared_ptr<Socket> socket, uint32_t player_id
+COMMAND: unique_ptr<Buffer::Reader> reader, uint32_t player_id
+CREATE_UNIT: uint32_t unit_id
+CREATE_PLAYER: uint32_t player_id
+REMOVE_UNIT: uint32_t unit_id, Trace* trace 
+REMOVE_PLAYER: uint32_t player_id
+END: Player* player, shared_ptr<Socket> socket
+  

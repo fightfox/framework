@@ -1,0 +1,55 @@
+Temporary command list:
+
+JS->CC
+
+Int8_t + ...
+
+int8_t 0: create player
+int8_t 1, double x, double y, double r, double dir: new a circle at (x, y) with radius r with velocity v;
+int8_t 2, double x1, y1, x2, y2, r: new a line from (x1, y1) to (x2, y2) with radius r
+int8_t 3: random killer
+int8_t 4: double x, y
+
+CC->JS
+
+figure{char 0/1 (figure_type), [0]double x, double y, double r, [1] double x1, y1, x2, y2, r}
+
+action 1: showUnit 
+format: char 1, uint32_t id, char 0/1 (unit_type), figure
+
+action 2: moveUnit
+format: char 2, uint32_t id, double x, y
+
+action 3: createUnit
+format: char 3, uint32_t id
+
+action 4: removePlayer
+format: char 4, uint32_t id
+
+action 5: identifyYourself
+format: chat 5, uint32_t player_id
+
+action 6: removeUnit
+format: chat 6, uint32_t id
+
+action 7: changeUnit (Figure)
+format: char 7, uint32_t id, figure
+
+action 8: changeUnit (R)
+format: char 8, unit32_t id, double r
+
+action 9: changeUnit (XY)
+format: char 9, unit32_t id, double x, double y
+
+action 10: hideUnit
+formmat: char 10, uint32_t id
+
+action 11: information completion
+format: char 11, uint32_t id (being player_id or unit_id based on odd&even), uint8_t prev_priv, uint8_t new_priv, ...
+
+case 99: end of the message
+
+
+CC TODO:
+
+script should be able to get XY

@@ -1,0 +1,51 @@
+# Ubuntu 16.04
+apt update
+
+#install git 
+apt install git 
+apt install g++
+apt install make
+
+# install google hash_map
+git clone https://github.com/sparsehash/sparsehash.git
+cd sparsehash/
+./configure
+make install
+
+# install OPENSLL zlib, and Libuv (libuv-dev)
+apt install libssl-dev 
+apt-get install zlib1g-dev
+# install uWS
+git clone https://github.com/uNetworking/uWebSockets.git
+cd uWebSockets/
+make
+sudo make install
+
+# ssh-key
+ssh-keygen -t rsa -C "ff"
+cat /root/.ssh/id_rsa.pub
+eval `ssh-agent -s`
+ssh-add ~/.ssh/id_rsa
+# https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/
+
+# clone framework
+git clone git@github.com:wanggambler/framework.git
+
+# git give up all local changes
+git reset --hard
+git pull
+
+
+## Ubuntu 14.04
+# update g++
+sudo apt-get install software-properties-common python-software-properties
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install gcc-5 g++-5
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5
+
+# check where is a libaray and its version
+ldconfig -p | grep openssl
+# install valgrind
+apt-get install valgrind
+

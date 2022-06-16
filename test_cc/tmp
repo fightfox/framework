@@ -1,0 +1,30 @@
+
+struct Bot {
+}
+unordered_map<uint32_t, Bot*> bots;
+
+g->createBot();
+
+void handle_bot(uint32_t player_id, BotOperation opt) {
+  if (opt==BotOperation::START) {
+    bots[player_id] = new Bot();
+    return;
+  }
+  if (opt==BotOperation::DEATH) {
+    bots.erase(player_id);
+    return;
+  }
+  auto player = getFighter(player_id);
+  auto bot = bots[player_id];
+  if (player->state==0) {
+    move_body(player, randXY(200));
+    if (rand01() < 0.1)
+      fire_bullet(player);
+  }
+  else if (player->state==1) {
+    if (rand01() < 0.1)
+      recall_bullet(player);
+  }
+}
+
+g->setupBot(handle_bot);

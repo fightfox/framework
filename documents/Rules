@@ -1,0 +1,221 @@
+2D RULES
+	created by Wanggamber @ Apr 13th, 2017
+
+-1. hints for invarients
+	* collision events
+	* player's camera (screenshot)
+	* toMessage (to all players that can see by foreachWitness)
+	* players & units
+0. philosophy
+	Assume that at 0.01, for each player, all units&players that he can see are well defined
+	Based on action updates which can maintain vision correctness and player's XYZ is fixed from 0.1 to 39.99, the property is held
+	* 0.000: move units & resolve collision
+	* 0.001: update XYZ based on scripts
+	* 0.002: calculate camera delta and update it (with two possible methods)
+	* 0.003(partially): information is sent to users
+	* 0.004: generate new collisions for next tick
+
+	* 0.005: Event::After_updateWorld
+1. basic classes (script says those are what i can see):
+	* XY
+		+< {float}x, {float}y
+		# {float}distTo(XY&)
+		# {bool}equal(XY&)
+	* Stroke
+		enum Stroke::Type{LINE, ARCH};
+		+< {XY}p0, {XY}p1 | {XY}p0, {XY}p1, {float}theta
+		+ {int32_t}id, {float}r, {Type}type
+		note: if it is line, it is p0 to p1; 
+			otherwise, p0 is circle center, p1 is mid-point, theta is the angle 
+		# {void}setId({int32_t})
+		# {vector<XY>}getIntersectionByStroke(Stroke&)
+	* Figure
+		enum Figure::Type{CIRCLE, LINE, RECTANGLE};
+		+< {Figure::Type}type, {XY}p, {float}r, {XY}deviation = 0
+			note: deviation = geometric center - control center
+		+ {int64_t}time = now(), {XY}v = XY(0,0), {XY}o = p, {float}dir = 0, {float}dense = 1
+		# {bool}evolve(int64_t _time) 				// smoothly move to the position at _time
+		# {float}area() = 0
+		# {bool}intersect(Figure_uptr&) = 0
+		# {bool}intersect(BB&) = 0
+		# {vector<Stroke>}expandByFigure(Figure_uptr&, {bool}weak) = 0	// weak is true when expanding by both figures
+		# {XY}pushedByFigure(Figure_uptr&, {bool}weak) = 0
+		# {BB}getBB()
+		# {BB}getBB({XY}_p)
+		++ Figure::Circle({XY}p, {float}r, {XY}deviation = 0) : Figure(CIRCLE, p, r, deviation) {}
+		++ Figure::Line({XY}p0, {XY}p1, {float}r = 0, {XY}deviation = 0) : Figure(LINE, (p0+p1)/2, r, deviation), p0(p0), p1(p1) {}
+		++ Figure::Rectangle({XY}p, {float}width, {float}height, {float}dir = 0, {float}r = 0, {XY}deviation = 0) 
+	* Unit
+		enum Unit::Type; // defined by user
+		+< {Unit::Type}type, {Figure_uptr}figure, {Game*}game, {int32_t}own_priv
+			note: should new a figure and deliver its pointer to the constructor in script
+		+ {bool}visible = true
+		+ {bool}isRepulsing(Unit_ptr) = 0
+		+ {void}toMessage({int}priv) = 0
+		+ {Unit_wptr/Player_wptr}observe <>|<int my_priv> (Unit_ptr&/Player_ptr&, {int}target_priv)
+		+ {Unit_wptr}join(Unit_ptr& unit)
+			note: "this->join(unit)" means "this joins unit and unit becomes the host of this";
+				then return the week pointer of the unit  
+				a) if unit==null_ptr, this becomes independent in terms of movement;
+				b) if previous host unit exists, this replaces previous host with unit;
+				c) (maintained elsewhere) if previous host dies any time, this become independent.
+		# {int32_t}id
+		# {bool}ifCollidingUnit(Unit_ptr)
+		# {void}foreachWitness(function<void(Player_ptr&)>&)
+		# {int}degree
+		# {bool}marked
+		# {XY}last_p
+		# {bool}ifMoving()							// check whether v == 0
+		++ ...
+	* Player
+		enum Player::Type; // defined by user
+		+< {Player::Type}type, {Socket*}socket, {Game*}game, {int32_t}own_priv
+		+ {XY}cam = XY(0,0), {float}zoom = 1
+		+ {void}adjustXYZ() = 0
+		+ {void}toMessage({int32_t}priv) = 0
+		+ {Unit_wptr/Player_wptr}observe <>|<int my_priv> (Unit_ptr&/Player_ptr&, {int}target_priv)
+		# {int32_t}id
+		# {void}foreachVisibleUnits(function<void(Unit_ptr&)>)
+		# {bool}ifSeeingUnit(Unit_ptr)
+		# {bool}ifSeeingBB(BB&)
+		# {void}observeUnit(Unit_ptr), eludeUnit(Unit_ptr)
+		# {void}observePlayer(Player_ptr), eludePlayer(Player_ptr)
+		# {BB}getBB()
+		# {void}writeAction(Action*)
+		# {UnitList}units, {PlayerList}players
+		++ ...
+	* Cooldown
+		enum Cooldown::Type // defined by user
+		enum Cooldown::OwnerType{NULL_, PLAYER_, UNIT_, GAME_}
+		+< {CDType}type, {Game*}game
+		+ {int64_t}time, {Player_wptr}player, {Unit_wptr}unit, {bool}enabled, 
+		+ {void}handle() = 0
+		+ {void}toMessage({int}priv) = 0
+		# {OwnerType}owner, {Event*}event
+		# {void}enable() | enable(player) | enable(unit)
+		# {void}disable()
+		# {bool}begin(int64_t delta)
+		# {bool}modify(int64_t delta)
+		# {bool}cancel()
+		# {int64_t}remain()
+		# {int64_t}until()
+		++ ...
+	* Event
+		enum Event::Type{
+			INITIALIZATION, ON_COLLISION, UPDATE_WORLD, START, FORCE_QUIT, COMMAND, 
+			AFTER_CREATE_UNIT, AFTER_CREATE_PLAYER, AFTER_REMOVE_UNIT, AFTER_REMOVE_PLAYER, AFTER_CHANGE_UNIT, 
+			AFTER_UPDATE, AFTER_COOLDOWN
+		};
+		#< {Event::Type}type, {int64_t}time, {Game*}game
+		# {void}handle() = 0
+		++ ...
+	* Action
+		+ {int64_t}time, {Game*}game
+		# {void}toMessage(TODO) = 0;
+		# {void}handle() = 0
+		# {void}_handle()
+		++ ...
+	* Update
+		enum Update::Type; // defined by user
+		enum Update::OwnerType{NULL_, PLAYER_, UNIT_, GAME_}
+		+< {Update::Type}type, {Game*}game, {} / {Player_ptr&}player, {int32_t}least_priv = 1 / {Unit_ptr&}unit, {int32_t}least_priv = 1
+		+ {void}toMessage({int32_t}priv) ~ 0	// for player/unit update
+		+ {void}toMessage(Player_ptr) ~ 0		// for game update
+		# {OwnerType}owner
+		++ ...
+	* Writer/Reader
+		+ writeBoolean(), writeChar(), writeInt(), writeFloat(), writeXY(), writeInt64(), writeTime(), writeString()
+		+ writeUnit(), writePlayer(), writeCooldown()
+	* Data
+		+< ()
+		++ ...
+	* BB
+		//TODO
+		# {vector<pair<BB, bool>>}getDelta(BB&)
+	#*# UnitManager
+2. What server can get from players:
+	* start
+		+ nickname (change to JSON later)
+	* force quit
+	* command
+		+ e.g., "mouseup", "mousedown", "keycode 32", "click upgrade 1", "mouse to xy"
+3. Actions (what server will send to clients):
+    anything starts with {int64_t} time
+    !!! system actions (only accessiable to system):
+    * showUnit(Unit_ptr, Player_ptr)
+    	>> {Unit}
+	* hideUnit(Unit_ptr, Player_ptr)
+		>> unit_id
+	* moveUnit(Unit_ptr, {XY}last_p)
+		note: update figure position before delivering unit in where last_p is previous position
+		>> unit_id, {XY}o
+	* showPlayer(Player_ptr)
+		>> {Player}
+	* hidePlayer(Player_ptr)
+		>> player_id
+	!!! trigger actions (accessiable to the script):
+	* createUnit(Unit*, Figure*)
+		note: new a unit and deliver the shared pointer in
+		>> unit_id
+	* createPlayer(Player_ptr)
+		note: new a player and deliver the shared pointer in
+		>> player_id
+	* removeUnit(Unit_ptr)
+		>> unit_id
+	* removePlayer(Player_ptr)
+		>> player_id
+	* changeUnit(Unit_ptr, figure)
+		>> unit_id, unit->figure
+	* changeUnitR(Unit_ptr, r)  
+		>> unit_id, {XY}r
+	* changeUnitXY(Unit_ptr, {XY}p) 
+		>> unit_id, {XY}p
+	* changeUnitV(Unit_ptr, {XY}v)
+		>> unit_id, {XY}v
+	* changeUnitDir(Unit_ptr, {float}dir)
+		>> unit_id, {char}dir
+	* update(Update&)	// ?
+		>> {Update}
+4. Events
+	[system events]
+	* Init
+	* OnCollision(time, game, unit1, unit2)
+		>> unit1, unit2
+	* UpdateWorld(time, game)
+		#< game
+		system1: resolving collision
+		system2: update the camera for player by creating a list of actions such as showUnit, showPlayer, ans so on
+	[operation events]
+	* Start
+		>> socket, reader
+	* Close
+		>> player
+	* Command
+		>> player, reader 
+	[action events]
+	* CreateUnit(time, game, unit)
+		>> unit
+	* AfterCreatePlayer
+		>> player
+	* RemoveUnit
+		notes: right after unit->alive is set to be false; while unit_list.get(i) is still non-nullptr
+		>> unit
+	* AfterRemovePlayer
+		>> player
+	* AfterChangeUnit
+		>> unit
+	* AfterUpdate
+		>> owner_type, update
+	[cooldown event] (can not be added as a trigger)
+	# AfterCooldown({int64_t}time, Cooldown*, Game*)
+5. Game
+	+< {string}version
+	+ virtual {float}collisionModifier(Unit_ptr& unit1, Unit_ptr& unit2){return 0};
+	* {Data}data
+	* {void}addTrigger({EventType}type, [](Event* evt, Game* game){});
+	* {void}_$actionname$()
+	# {Manager<Unit>}units
+	# {Manager<Player>}players
+	# {bool}game->isAlive(Unit_wptr&/Player_wptr&)
+	# {void}broadcast()
+	# {HashTable}collisions // {void}clear(), {void}insert(int, int), {bool}ifExist(int, int)

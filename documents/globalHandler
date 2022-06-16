@@ -1,0 +1,21 @@
+collisionHandler:
+	insert(time, unit1, unit2): insert an event with unit1 and unit2
+	comsume(): output earliest collision and remove it from the data
+	earliestTime(): output time of earliest event
+	remove(unit): remove all events with unit
+	lastCollision(unit1, unit2): return last time they collided
+
+eventHandler:
+	EH[event_id] <- event*
+	comsume(): output earliest event
+	earliestTime(): output time of earliest event
+	remove(event_id)
+
+unitList:
+	insert(unit*)
+	get(id): return unit*
+	remove(unit*)
+
+Unit
+	uint32_t id;
+	Trace* trace;

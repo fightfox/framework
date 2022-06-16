@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>psiball.io</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+        #canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        #login {
+            margin: 0;
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
+        #header {
+            font-family: "Comic Sans MS", Times, serif;
+            font-size: 48px;
+        }
+        #sub {
+            font-size: 20px;
+        }
+        #play_online {
+            cursor: pointer;
+            font-family: "Arial";
+        }
+        #nickname {
+            background-color: #F5FFFA;
+            font-family: "Arial";
+        }
+    </style>
+</head>
+<body style="background-color:#F5FFFA;" onload = "init();">
+<canvas id="canvas" width="800" height="800" style="display: none"></canvas>
+
+<div id="login">
+    <p id = "header"> PSIBALL.IO <sub id = "sub"> v5.8</sub> </p>
+    <input type="button" id="play_locally" value="Play on Local Server" style="display: none">
+    <form class="form-inline" onsubmit="return false">
+        <label class="sr-only" for="nickname">Username</label>
+        <div class="input-group mb-2 mr-sm-2 mb-sm-0">
+            <div class="input-group-addon">@</div>
+            <input type="text" class="form-control" id="nickname" maxlength="15" placeholder="Nickname" autofocus>
+        </div>
+        <button type="submit" id="play_online" class="btn btn-primary">Play</button>
+        <button type="button" id="config_button" class="btn btn-default">
+            <span class="glyphicon glyphicon-cog"></span>
+        </button>
+    </form>
+</div>
+
+<script src="easeljs-NEXT.combined.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
